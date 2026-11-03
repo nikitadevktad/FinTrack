@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">FinTrack</string>
+    <string name="screen_title">FinTrack</string>
+    <string name="empty_transactions">Операций пока нет</string>
+</resources>

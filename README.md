@@ -1,5 +1,17 @@
 # FinTrack
 
+Описание состава проекта и порядка запуска находится в [Шаге 02: Android-проект](docs/steps/02-android-project.md).
+
+## Сборка
+
+Для сборки нужны JDK 17, Android SDK Platform 37 и Android SDK Build-Tools 36.0.0 или новее. Отдельно устанавливать Gradle не нужно: проект использует Gradle Wrapper.
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
+Стабильная конфигурация проекта: Android Gradle Plugin 9.4.1, Gradle 9.6.0 и Kotlin 2.4.21. В проекте один модуль `app`; интерфейс расположен в `presentation`, тема находится в `presentation/theme`.
+
 FinTrack это Android-приложение для учёта личных финансов в RUB. В первой версии не планируются сервер, регистрация и банковские интеграции. Операции будут вводиться вручную и храниться локально.
 
 ## Текущий статус
