@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">FinTrack</string>
-    <string name="screen_title">FinTrack</string>
-    <string name="empty_transactions">Операций пока нет</string>
+    <string name="navigation_overview">Обзор</string>
+    <string name="navigation_history">История</string>
+    <string name="navigation_analytics">Аналитика</string>
+    <string name="overview_empty_state">Добавьте первую операцию, чтобы увидеть сводку</string>
+    <string name="history_empty_state">Операций пока нет</string>
+    <string name="analytics_empty_state">Аналитика появится после добавления операций</string>
 </resources>

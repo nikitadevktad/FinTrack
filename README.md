@@ -1,6 +1,9 @@
 # FinTrack
 
-Описание состава проекта и порядка запуска находится в [Шаге 02: Android-проект](docs/steps/02-android-project.md).
+Описание состава проекта и порядка запуска находится в документации по шагам.
+
+- [Шаг 02. Android-проект](docs/steps/02-android-project.md)
+- [Шаг 03. Навигация](docs/steps/03-navigation.md)
 
 ## Сборка
 
@@ -10,13 +13,15 @@
 .\gradlew.bat assembleDebug
 ```
 
-Стабильная конфигурация проекта: Android Gradle Plugin 9.4.1, Gradle 9.6.0 и Kotlin 2.4.21. В проекте один модуль `app`; интерфейс расположен в `presentation`, тема находится в `presentation/theme`.
+Стабильная конфигурация проекта включает Android Gradle Plugin 9.4.1, Gradle 9.6.0 и Kotlin 2.4.21. В проекте один модуль `app`, интерфейс расположен в `presentation`, тема находится в `presentation/theme`.
 
 FinTrack это Android-приложение для учёта личных финансов в RUB. В первой версии не планируются сервер, регистрация и банковские интеграции. Операции будут вводиться вручную и храниться локально.
 
 ## Текущий статус
 
-Создан базовый Android-проект с модулем `app`, Kotlin, Jetpack Compose и Material 3. Сейчас в приложении отображается стартовый шаблонный экран. Учёт операций, локальное хранилище, Room, Coroutines и Flow ещё не реализованы.
+Создан Android-проект с Kotlin, Jetpack Compose и Material 3. Приложение содержит три вкладки с пустыми состояниями «Обзор», «История» и «Аналитика». Навигация между вкладками работает через Navigation Compose.
+
+Учёт операций, локальное хранилище, Room, Coroutines, Flow, ViewModel и DI ещё не реализованы.
 
 ## Планируемые возможности
 
@@ -32,6 +37,7 @@ FinTrack это Android-приложение для учёта личных фи
 - Kotlin
 - Jetpack Compose
 - Material 3
+- Navigation Compose
 - Room
 - Coroutines
 - Flow

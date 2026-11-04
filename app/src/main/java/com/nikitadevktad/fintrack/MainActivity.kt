@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.nikitadevktad.fintrack.presentation.FinTrackScreen
+import com.nikitadevktad.fintrack.presentation.navigation.FinTrackApp
 import com.nikitadevktad.fintrack.presentation.theme.FinTrackTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FinTrackTheme {
-                FinTrackScreen()
+                FinTrackApp()
             }
         }
     }
