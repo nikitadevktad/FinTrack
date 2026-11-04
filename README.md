@@ -4,6 +4,7 @@
 
 - [Шаг 02. Android-проект](docs/steps/02-android-project.md)
 - [Шаг 03. Навигация](docs/steps/03-navigation.md)
+- [Шаг 04. Доменные модели](docs/steps/04-domain-models.md)
 
 ## Сборка
 
@@ -21,7 +22,7 @@ FinTrack это Android-приложение для учёта личных фи
 
 Создан Android-проект с Kotlin, Jetpack Compose и Material 3. Приложение содержит три вкладки с пустыми состояниями «Обзор», «История» и «Аналитика». Навигация между вкладками работает через Navigation Compose.
 
-Учёт операций, локальное хранилище, Room, Coroutines, Flow, ViewModel и DI ещё не реализованы.
+Добавлены доменные модели операций и категорий. Учёт операций, локальное хранилище, Room, Coroutines, Flow, ViewModel и DI ещё не реализованы.
 
 ## Планируемые возможности
 
