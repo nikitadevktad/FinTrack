@@ -24,6 +24,7 @@ import com.nikitadevktad.fintrack.R
 import com.nikitadevktad.fintrack.presentation.analytics.AnalyticsScreen
 import com.nikitadevktad.fintrack.presentation.history.HistoryScreen
 import com.nikitadevktad.fintrack.presentation.overview.OverviewScreen
+import com.nikitadevktad.fintrack.presentation.transaction.AddTransactionScreen
 
 @Composable
 fun FinTrackApp() {
@@ -69,8 +70,16 @@ fun FinTrackApp() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Destination.Overview.route) { OverviewScreen() }
-            composable(Destination.History.route) { HistoryScreen() }
+            composable(Destination.History.route) {
+                HistoryScreen(onAddTransaction = { navController.navigate(Destination.AddTransaction.route) })
+            }
             composable(Destination.Analytics.route) { AnalyticsScreen() }
+            composable(Destination.AddTransaction.route) {
+                AddTransactionScreen(
+                    onSaved = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
@@ -82,7 +91,8 @@ private enum class Destination(
 ) {
     Overview("overview", R.string.navigation_overview, R.drawable.ic_overview),
     History("history", R.string.navigation_history, R.drawable.ic_history),
-    Analytics("analytics", R.string.navigation_analytics, R.drawable.ic_analytics)
+    Analytics("analytics", R.string.navigation_analytics, R.drawable.ic_analytics),
+    AddTransaction("add_transaction", R.string.add_transaction_title, R.drawable.ic_history)
 }
 
-private val bottomDestinations = Destination.entries
+private val bottomDestinations = listOf(Destination.Overview, Destination.History, Destination.Analytics)

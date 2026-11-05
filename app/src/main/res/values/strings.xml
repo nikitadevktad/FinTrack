@@ -5,5 +5,25 @@
     <string name="navigation_analytics">Аналитика</string>
     <string name="overview_empty_state">Добавьте первую операцию, чтобы увидеть сводку</string>
     <string name="history_empty_state">Операций пока нет</string>
+    <string name="history_add_transaction">Добавить операцию</string>
+    <string name="add_transaction_title">Новая операция</string>
+    <string name="transaction_type">Тип операции</string>
+    <string name="transaction_income">Доход</string>
+    <string name="transaction_expense">Расход</string>
+    <string name="transaction_amount">Сумма, ₽</string>
+    <string name="transaction_category">Категория</string>
+    <string name="transaction_category_not_selected">Выберите категорию</string>
+    <string name="transaction_note">Заметка</string>
+    <string name="transaction_save">Сохранить</string>
+    <string name="transaction_cancel">Отмена</string>
+    <string name="transaction_select_category">Выберите категорию</string>
+    <string name="transaction_amount_empty">Введите сумму</string>
+    <string name="transaction_amount_invalid">Введите сумму с не более чем двумя знаками после разделителя</string>
+    <string name="transaction_amount_positive">Сумма должна быть больше нуля</string>
+    <string name="transaction_amount_overflow">Сумма слишком большая</string>
+    <string name="transaction_category_required">Выберите категорию</string>
+    <string name="transaction_save_error">Не удалось сохранить операцию. Попробуйте ещё раз</string>
+    <string name="transaction_income_amount">+%1$s ₽</string>
+    <string name="transaction_expense_amount">-%1$s ₽</string>
     <string name="analytics_empty_state">Аналитика появится после добавления операций</string>
 </resources>
