@@ -11,6 +11,9 @@ interface CategoryDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(category: CategoryEntity)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(categories: List<CategoryEntity>)
+
     @Query("SELECT * FROM categories ORDER BY name ASC, id ASC")
     suspend fun getAll(): List<CategoryEntity>
 }
