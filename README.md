@@ -5,6 +5,7 @@
 - [Шаг 02. Android-проект](docs/steps/02-android-project.md)
 - [Шаг 03. Навигация](docs/steps/03-navigation.md)
 - [Шаг 04. Доменные модели](docs/steps/04-domain-models.md)
+- [Шаг 05. Локальная база Room](docs/steps/05-room-database.md)
 
 ## Сборка
 
