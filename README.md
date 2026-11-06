@@ -12,6 +12,7 @@
 - [Шаг 09. Удаление операции](docs/steps/09-delete-transaction.md)
 - [Шаг 10. Дата операции](docs/steps/10-transaction-date.md)
 - [Шаг 11. Фильтр периода в истории](docs/steps/11-history-period-filter.md)
+- [Шаг 12. Фильтры типа и категории в истории](docs/steps/12-history-type-category-filter.md)
 
 ## Сборка
 

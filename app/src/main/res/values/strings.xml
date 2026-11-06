@@ -18,6 +18,14 @@
     <string name="history_period_confirm">Применить</string>
     <string name="history_period_invalid_range">Начальная дата не может быть позже конечной</string>
     <string name="history_period_empty_state">За выбранный период операций нет</string>
+    <string name="history_type_label">Тип</string>
+    <string name="history_all_types">Все типы</string>
+    <string name="history_incomes">Доходы</string>
+    <string name="history_expenses">Расходы</string>
+    <string name="history_category_label">Категория</string>
+    <string name="history_all_categories">Все категории</string>
+    <string name="history_filtered_empty_state">По выбранным фильтрам операций нет</string>
+    <string name="history_reset_filters">Сбросить фильтры</string>
     <string name="add_transaction_title">Новая операция</string>
     <string name="edit_transaction_title">Редактирование операции</string>
     <string name="transaction_type">Тип операции</string>

@@ -13,11 +13,23 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(transaction: TransactionEntity)
 
-    @Query("SELECT * FROM transactions ORDER BY dateEpochDay DESC, id DESC")
-    fun observeAll(): Flow<List<TransactionEntity>>
-
-    @Query("SELECT * FROM transactions WHERE dateEpochDay >= :startEpochDay AND dateEpochDay < :endEpochDay ORDER BY dateEpochDay DESC, id DESC")
-    fun observeBetween(startEpochDay: Long, endEpochDay: Long): Flow<List<TransactionEntity>>
+    @Query(
+        """
+        SELECT transactions.* FROM transactions
+        INNER JOIN categories ON transactions.categoryId = categories.id
+        WHERE (:startEpochDay IS NULL OR transactions.dateEpochDay >= :startEpochDay)
+          AND (:endEpochDay IS NULL OR transactions.dateEpochDay < :endEpochDay)
+          AND (:type IS NULL OR categories.type = :type)
+          AND (:categoryId IS NULL OR transactions.categoryId = :categoryId)
+        ORDER BY transactions.dateEpochDay DESC, transactions.id DESC
+        """
+    )
+    fun observeFiltered(
+        startEpochDay: Long?,
+        endEpochDay: Long?,
+        type: String?,
+        categoryId: Long?
+    ): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: Long): TransactionEntity?

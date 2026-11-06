@@ -30,27 +30,30 @@ sealed interface HistoryPeriod {
     data class Custom(val start: LocalDate, val end: LocalDate) : HistoryPeriod
 }
 
+data class HistoryFilters(
+    val period: HistoryPeriod = HistoryPeriod.All,
+    val type: TransactionType? = null,
+    val categoryId: Long? = null
+)
+
 class HistoryViewModel(
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository
 ) : ViewModel() {
     private val categories = MutableStateFlow<List<Category>>(emptyList())
-    private val selectedPeriod = MutableStateFlow<HistoryPeriod>(HistoryPeriod.All)
+    private val selectedFilters = MutableStateFlow(HistoryFilters())
 
-    val period: StateFlow<HistoryPeriod> = selectedPeriod.asStateFlow()
+    val filters: StateFlow<HistoryFilters> = selectedFilters.asStateFlow()
+    val availableCategories: StateFlow<List<Category>> = categories.asStateFlow()
 
-    val items: StateFlow<List<HistoryItem>> = selectedPeriod.flatMapLatest { selected ->
-        when (selected) {
-            HistoryPeriod.All -> transactionRepository.observeAll()
-            is HistoryPeriod.CurrentMonth -> transactionRepository.observeBetween(
-                selected.start.toEpochDay(),
-                selected.end.plusDays(1).toEpochDay()
-            )
-            is HistoryPeriod.Custom -> transactionRepository.observeBetween(
-                selected.start.toEpochDay(),
-                selected.end.plusDays(1).toEpochDay()
-            )
-        }
+    val items: StateFlow<List<HistoryItem>> = selectedFilters.flatMapLatest { filters ->
+        val (startEpochDay, endEpochDay) = filters.period.toEpochDayRange()
+        transactionRepository.observeFiltered(
+            startEpochDay = startEpochDay,
+            endEpochDay = endEpochDay,
+            type = filters.type?.name,
+            categoryId = filters.categoryId
+        )
     }
         .combine(categories) { transactions, allCategories ->
             val categoriesById = allCategories.associateBy(Category::id)
@@ -75,17 +78,45 @@ class HistoryViewModel(
     }
 
     fun selectAllOperations() {
-        selectedPeriod.value = HistoryPeriod.All
+        selectedFilters.value = selectedFilters.value.copy(period = HistoryPeriod.All)
     }
 
     fun selectCurrentMonth() {
         val today = LocalDate.now()
         val start = today.withDayOfMonth(1)
-        selectedPeriod.value = HistoryPeriod.CurrentMonth(start, start.plusMonths(1).minusDays(1))
+        selectedFilters.value = selectedFilters.value.copy(
+            period = HistoryPeriod.CurrentMonth(start, start.plusMonths(1).minusDays(1))
+        )
     }
 
     fun selectCustomPeriod(start: LocalDate, end: LocalDate) {
         require(!start.isAfter(end))
-        selectedPeriod.value = HistoryPeriod.Custom(start, end)
+        selectedFilters.value = selectedFilters.value.copy(period = HistoryPeriod.Custom(start, end))
     }
+
+    fun selectType(type: TransactionType?) {
+        val current = selectedFilters.value
+        val selectedCategory = categories.value.firstOrNull { it.id == current.categoryId }
+        selectedFilters.value = current.copy(
+            type = type,
+            categoryId = current.categoryId.takeIf { type == null || selectedCategory?.type == type }
+        )
+    }
+
+    fun selectCategory(categoryId: Long?) {
+        val category = categories.value.firstOrNull { it.id == categoryId }
+        if (categoryId == null || category?.type == selectedFilters.value.type || selectedFilters.value.type == null) {
+            selectedFilters.value = selectedFilters.value.copy(categoryId = categoryId)
+        }
+    }
+
+    fun resetFilters() {
+        selectedFilters.value = HistoryFilters()
+    }
+}
+
+private fun HistoryPeriod.toEpochDayRange(): Pair<Long?, Long?> = when (this) {
+    HistoryPeriod.All -> null to null
+    is HistoryPeriod.CurrentMonth -> start.toEpochDay() to end.plusDays(1).toEpochDay()
+    is HistoryPeriod.Custom -> start.toEpochDay() to end.plusDays(1).toEpochDay()
 }

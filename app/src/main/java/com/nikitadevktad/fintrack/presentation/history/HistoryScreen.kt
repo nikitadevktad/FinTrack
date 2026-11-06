@@ -36,6 +36,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.nikitadevktad.fintrack.FinTrackApplication
 import com.nikitadevktad.fintrack.R
+import com.nikitadevktad.fintrack.domain.model.Category
 import com.nikitadevktad.fintrack.domain.model.TransactionType
 import java.time.Instant
 import java.time.LocalDate
@@ -59,7 +60,8 @@ fun HistoryScreen(
         }
     })
     val items by viewModel.items.collectAsStateWithLifecycle()
-    val period by viewModel.period.collectAsStateWithLifecycle()
+    val filters by viewModel.filters.collectAsStateWithLifecycle()
+    val categories by viewModel.availableCategories.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
         Button(
@@ -70,7 +72,7 @@ fun HistoryScreen(
         ) {
             Text(stringResource(R.string.history_add_transaction))
         }
-        HistoryPeriodSelector(period = period, viewModel = viewModel)
+        HistoryFiltersSelector(filters = filters, categories = categories, viewModel = viewModel)
         if (items.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -79,16 +81,11 @@ fun HistoryScreen(
             ) {
                 Text(
                     stringResource(
-                        if (period is HistoryPeriod.All) R.string.history_empty_state
-                        else R.string.history_period_empty_state
+                        if (filters == HistoryFilters()) R.string.history_empty_state
+                        else R.string.history_filtered_empty_state
                     ),
                     style = MaterialTheme.typography.bodyLarge
                 )
-                if (period !is HistoryPeriod.All) {
-                    TextButton(onClick = viewModel::selectAllOperations) {
-                        Text(stringResource(R.string.history_all_operations))
-                    }
-                }
             }
         } else {
             LazyColumn(
@@ -122,35 +119,75 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryPeriodSelector(period: HistoryPeriod, viewModel: HistoryViewModel) {
+private fun HistoryFiltersSelector(
+    filters: HistoryFilters,
+    categories: List<Category>,
+    viewModel: HistoryViewModel
+) {
     val isCustomPeriodDialogOpen = remember { mutableStateOf(false) }
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(
             stringResource(R.string.history_period_label),
             style = MaterialTheme.typography.titleMedium
         )
-        PeriodOption(
-            selected = period is HistoryPeriod.All,
+        FilterOption(
+            selected = filters.period is HistoryPeriod.All,
             label = stringResource(R.string.history_all_operations),
             onClick = viewModel::selectAllOperations
         )
-        PeriodOption(
-            selected = period is HistoryPeriod.CurrentMonth,
+        FilterOption(
+            selected = filters.period is HistoryPeriod.CurrentMonth,
             label = stringResource(R.string.history_current_month),
             onClick = viewModel::selectCurrentMonth
         )
-        PeriodOption(
-            selected = period is HistoryPeriod.Custom,
+        FilterOption(
+            selected = filters.period is HistoryPeriod.Custom,
             label = stringResource(R.string.history_choose_period),
             onClick = { isCustomPeriodDialogOpen.value = true }
         )
         Text(
-            stringResource(R.string.history_active_period, periodLabel(period)),
+            stringResource(R.string.history_active_period, periodLabel(filters.period)),
             style = MaterialTheme.typography.bodyMedium
         )
+        Text(stringResource(R.string.history_type_label), style = MaterialTheme.typography.titleMedium)
+        FilterOption(
+            selected = filters.type == null,
+            label = stringResource(R.string.history_all_types),
+            onClick = { viewModel.selectType(null) }
+        )
+        FilterOption(
+            selected = filters.type == TransactionType.INCOME,
+            label = stringResource(R.string.history_incomes),
+            onClick = { viewModel.selectType(TransactionType.INCOME) }
+        )
+        FilterOption(
+            selected = filters.type == TransactionType.EXPENSE,
+            label = stringResource(R.string.history_expenses),
+            onClick = { viewModel.selectType(TransactionType.EXPENSE) }
+        )
+        Text(stringResource(R.string.history_category_label), style = MaterialTheme.typography.titleMedium)
+        FilterOption(
+            selected = filters.categoryId == null,
+            label = stringResource(R.string.history_all_categories),
+            onClick = { viewModel.selectCategory(null) }
+        )
+        categories
+            .filter { filters.type == null || it.type == filters.type }
+            .forEach { category ->
+                FilterOption(
+                    selected = filters.categoryId == category.id,
+                    label = category.name,
+                    onClick = { viewModel.selectCategory(category.id) }
+                )
+            }
+        if (filters != HistoryFilters()) {
+            TextButton(onClick = viewModel::resetFilters) {
+                Text(stringResource(R.string.history_reset_filters))
+            }
+        }
     }
     if (isCustomPeriodDialogOpen.value) {
-        val customPeriod = period as? HistoryPeriod.Custom
+        val customPeriod = filters.period as? HistoryPeriod.Custom
         CustomPeriodDialog(
             initialStart = customPeriod?.start ?: LocalDate.now(),
             initialEnd = customPeriod?.end ?: LocalDate.now(),
@@ -164,7 +201,7 @@ private fun HistoryPeriodSelector(period: HistoryPeriod, viewModel: HistoryViewM
 }
 
 @Composable
-private fun PeriodOption(selected: Boolean, label: String, onClick: () -> Unit) {
+private fun FilterOption(selected: Boolean, label: String, onClick: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         RadioButton(selected = selected, onClick = onClick)
         TextButton(onClick = onClick) { Text(label) }

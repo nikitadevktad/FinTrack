@@ -4,9 +4,12 @@ import com.nikitadevktad.fintrack.domain.model.Transaction
 import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {
-    fun observeAll(): Flow<List<Transaction>>
-
-    fun observeBetween(startEpochDay: Long, endEpochDay: Long): Flow<List<Transaction>>
+    fun observeFiltered(
+        startEpochDay: Long?,
+        endEpochDay: Long?,
+        type: String?,
+        categoryId: Long?
+    ): Flow<List<Transaction>>
 
     suspend fun getById(id: Long): Transaction?
 

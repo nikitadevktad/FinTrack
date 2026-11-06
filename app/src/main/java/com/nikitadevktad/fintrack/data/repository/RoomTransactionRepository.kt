@@ -12,11 +12,13 @@ class RoomTransactionRepository(
     private val transactionDao: TransactionDao,
     private val awaitInitialization: suspend () -> Unit
 ) : TransactionRepository {
-    override fun observeAll(): Flow<List<Transaction>> = transactionDao.observeAll()
-        .map { transactions -> transactions.map(TransactionEntity::toDomain) }
-
-    override fun observeBetween(startEpochDay: Long, endEpochDay: Long): Flow<List<Transaction>> =
-        transactionDao.observeBetween(startEpochDay, endEpochDay)
+    override fun observeFiltered(
+        startEpochDay: Long?,
+        endEpochDay: Long?,
+        type: String?,
+        categoryId: Long?
+    ): Flow<List<Transaction>> =
+        transactionDao.observeFiltered(startEpochDay, endEpochDay, type, categoryId)
             .map { transactions -> transactions.map(TransactionEntity::toDomain) }
 
     override suspend fun getById(id: Long): Transaction? {
