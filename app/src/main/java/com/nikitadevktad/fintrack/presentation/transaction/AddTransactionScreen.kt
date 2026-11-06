@@ -48,6 +48,7 @@ fun AddTransactionScreen(
     })
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.isSaved) { if (state.isSaved) onSaved() }
+    LaunchedEffect(state.isDeleted) { if (state.isDeleted) onSaved() }
     if (state.loadError) {
         LoadErrorContent(onCancel, modifier)
     } else if (state.isLoading) {
@@ -92,13 +93,54 @@ private fun AddTransactionContent(
             modifier = Modifier.fillMaxWidth()
         )
         state.saveError?.let { Text(stringResource(it.stringRes)) }
-        Button(onClick = viewModel::save, enabled = !state.isSaving, modifier = Modifier.fillMaxWidth()) {
+        state.deleteError?.let { Text(stringResource(it.stringRes)) }
+        Button(
+            onClick = viewModel::save,
+            enabled = !state.isSaving && !state.isDeleting,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             if (state.isSaving) CircularProgressIndicator() else Text(stringResource(R.string.transaction_save))
         }
-        TextButton(onClick = onCancel, enabled = !state.isSaving, modifier = Modifier.align(Alignment.End)) {
-            Text(stringResource(R.string.transaction_cancel))
+        if (isEditing) {
+            TextButton(
+                onClick = viewModel::openDeleteConfirmation,
+                enabled = !state.isSaving && !state.isDeleting,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                if (state.isDeleting) CircularProgressIndicator() else Text(stringResource(R.string.transaction_delete))
+            }
+        }
+        TextButton(onClick = onCancel, enabled = !state.isSaving && !state.isDeleting, modifier = Modifier.align(Alignment.End)) {
+            Text(
+                stringResource(
+                    if (state.deleteError == DeleteError.NOT_FOUND) R.string.transaction_back_to_history
+                    else R.string.transaction_cancel
+                )
+            )
+        }
+        if (state.isDeleteConfirmationOpen) {
+            DeleteConfirmationDialog(viewModel)
         }
     }
+}
+
+@Composable
+private fun DeleteConfirmationDialog(viewModel: AddTransactionViewModel) {
+    AlertDialog(
+        onDismissRequest = viewModel::closeDeleteConfirmation,
+        title = { Text(stringResource(R.string.transaction_delete_title)) },
+        text = { Text(stringResource(R.string.transaction_delete_message)) },
+        confirmButton = {
+            TextButton(onClick = viewModel::delete) {
+                Text(stringResource(R.string.transaction_delete_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = viewModel::closeDeleteConfirmation) {
+                Text(stringResource(R.string.transaction_cancel))
+            }
+        }
+    )
 }
 
 @Composable
@@ -172,4 +214,10 @@ private val SaveError.stringRes: Int
     get() = when (this) {
         SaveError.FAILED -> R.string.transaction_save_error
         SaveError.NOT_FOUND -> R.string.transaction_update_not_found
+    }
+
+private val DeleteError.stringRes: Int
+    get() = when (this) {
+        DeleteError.FAILED -> R.string.transaction_delete_error
+        DeleteError.NOT_FOUND -> R.string.transaction_delete_not_found
     }

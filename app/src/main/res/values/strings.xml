@@ -17,6 +17,10 @@
     <string name="transaction_note">Заметка</string>
     <string name="transaction_save">Сохранить</string>
     <string name="transaction_cancel">Отмена</string>
+    <string name="transaction_delete">Удалить операцию</string>
+    <string name="transaction_delete_title">Удалить операцию</string>
+    <string name="transaction_delete_message">Операция будет удалена без возможности восстановления</string>
+    <string name="transaction_delete_confirm">Удалить</string>
     <string name="transaction_select_category">Выберите категорию</string>
     <string name="transaction_amount_empty">Введите сумму</string>
     <string name="transaction_amount_invalid">Введите сумму с не более чем двумя знаками после разделителя</string>
@@ -25,6 +29,8 @@
     <string name="transaction_category_required">Выберите категорию</string>
     <string name="transaction_save_error">Не удалось сохранить операцию. Попробуйте ещё раз</string>
     <string name="transaction_update_not_found">Операция больше не существует</string>
+    <string name="transaction_delete_error">Не удалось удалить операцию. Попробуйте ещё раз</string>
+    <string name="transaction_delete_not_found">Операция уже была удалена. Вернитесь в историю</string>
     <string name="transaction_load_error">Не удалось открыть операцию. Возможно, она была удалена</string>
     <string name="transaction_back_to_history">Вернуться в историю</string>
     <string name="transaction_income_amount">+%1$s ₽</string>

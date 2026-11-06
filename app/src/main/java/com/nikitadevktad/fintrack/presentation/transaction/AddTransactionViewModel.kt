@@ -23,10 +23,14 @@ data class AddTransactionState(
     val categoryError: Boolean = false,
     val isCategoryDialogOpen: Boolean = false,
     val saveError: SaveError? = null,
+    val deleteError: DeleteError? = null,
     val isLoading: Boolean = false,
     val loadError: Boolean = false,
     val isSaving: Boolean = false,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val isDeleteConfirmationOpen: Boolean = false,
+    val isDeleting: Boolean = false,
+    val isDeleted: Boolean = false
 ) {
     val visibleCategories: List<Category>
         get() = categories.filter { it.type == type }
@@ -35,6 +39,8 @@ data class AddTransactionState(
 enum class AmountError { EMPTY, INVALID, NOT_POSITIVE, OVERFLOW }
 
 enum class SaveError { FAILED, NOT_FOUND }
+
+enum class DeleteError { FAILED, NOT_FOUND }
 
 class AddTransactionViewModel(
     private val transactionRepository: TransactionRepository,
@@ -126,7 +132,7 @@ class AddTransactionViewModel(
 
     fun save() {
         val current = _state.value
-        if (current.isSaving) return
+        if (current.isSaving || current.isDeleting) return
         val amountResult = parseAmountInKopecks(current.amount)
         val categoryIsValid = current.categoryId in current.visibleCategories.map(Category::id).toSet()
         if (amountResult !is AmountResult.Success || !categoryIsValid) {
@@ -170,6 +176,42 @@ class AddTransactionViewModel(
                         _state.value = _state.value.copy(isSaving = false, saveError = SaveError.FAILED)
                     }
             }
+        }
+    }
+
+    fun openDeleteConfirmation() {
+        if (originalTransaction != null && !_state.value.isSaving && !_state.value.isDeleting) {
+            _state.value = _state.value.copy(isDeleteConfirmationOpen = true, deleteError = null)
+        }
+    }
+
+    fun closeDeleteConfirmation() {
+        if (!_state.value.isDeleting) {
+            _state.value = _state.value.copy(isDeleteConfirmationOpen = false)
+        }
+    }
+
+    fun delete() {
+        val transaction = originalTransaction ?: return
+        val current = _state.value
+        if (current.isSaving || current.isDeleting) return
+        _state.value = current.copy(
+            isDeleteConfirmationOpen = false,
+            isDeleting = true,
+            deleteError = null
+        )
+        viewModelScope.launch {
+            runCatching { transactionRepository.deleteById(transaction.id) }
+                .onSuccess { deleted ->
+                    _state.value = _state.value.copy(
+                        isDeleting = false,
+                        isDeleted = deleted,
+                        deleteError = if (deleted) null else DeleteError.NOT_FOUND
+                    )
+                }
+                .onFailure {
+                    _state.value = _state.value.copy(isDeleting = false, deleteError = DeleteError.FAILED)
+                }
         }
     }
 }

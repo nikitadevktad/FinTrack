@@ -31,6 +31,11 @@ class RoomTransactionRepository(
         awaitInitialization()
         return transactionDao.update(transaction.toEntity()) == 1
     }
+
+    override suspend fun deleteById(id: Long): Boolean {
+        awaitInitialization()
+        return transactionDao.deleteById(id) == 1
+    }
 }
 
 private fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
