@@ -15,6 +15,10 @@ class RoomTransactionRepository(
     override fun observeAll(): Flow<List<Transaction>> = transactionDao.observeAll()
         .map { transactions -> transactions.map(TransactionEntity::toDomain) }
 
+    override fun observeBetween(startEpochDay: Long, endEpochDay: Long): Flow<List<Transaction>> =
+        transactionDao.observeBetween(startEpochDay, endEpochDay)
+            .map { transactions -> transactions.map(TransactionEntity::toDomain) }
+
     override suspend fun getById(id: Long): Transaction? {
         awaitInitialization()
         return transactionDao.getById(id)?.toDomain()

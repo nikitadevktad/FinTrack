@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.Flow
 interface TransactionRepository {
     fun observeAll(): Flow<List<Transaction>>
 
+    fun observeBetween(startEpochDay: Long, endEpochDay: Long): Flow<List<Transaction>>
+
     suspend fun getById(id: Long): Transaction?
 
     /**
