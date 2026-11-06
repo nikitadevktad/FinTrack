@@ -17,6 +17,7 @@ data class AddTransactionState(
     val type: TransactionType = TransactionType.EXPENSE,
     val amount: String = "",
     val categoryId: Long? = null,
+    val date: LocalDate = LocalDate.now(),
     val note: String = "",
     val categories: List<Category> = emptyList(),
     val amountError: AmountError? = null,
@@ -80,6 +81,7 @@ class AddTransactionViewModel(
                             type = category.type,
                             amount = formatAmountInput(transaction.amountInKopecks),
                             categoryId = transaction.categoryId,
+                            date = transaction.date,
                             note = transaction.note.orEmpty(),
                             categories = categories,
                             isLoading = false
@@ -130,6 +132,10 @@ class AddTransactionViewModel(
         _state.value = _state.value.copy(note = note, saveError = null)
     }
 
+    fun updateDate(date: LocalDate) {
+        _state.value = _state.value.copy(date = date, saveError = null)
+    }
+
     fun save() {
         val current = _state.value
         if (current.isSaving || current.isDeleting) return
@@ -147,12 +153,13 @@ class AddTransactionViewModel(
             val transaction = originalTransaction?.copy(
                 amountInKopecks = amountResult.value,
                 categoryId = current.categoryId!!,
+                date = current.date,
                 note = current.note.trim().ifEmpty { null }
             ) ?: Transaction(
                 id = System.currentTimeMillis(),
                 amountInKopecks = amountResult.value,
                 categoryId = current.categoryId!!,
-                date = LocalDate.now(),
+                date = current.date,
                 note = current.note.trim().ifEmpty { null }
             )
             if (originalTransaction != null) {

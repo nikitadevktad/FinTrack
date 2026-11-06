@@ -14,6 +14,8 @@
     <string name="transaction_amount">Сумма, ₽</string>
     <string name="transaction_category">Категория</string>
     <string name="transaction_category_not_selected">Выберите категорию</string>
+    <string name="transaction_date">Дата операции</string>
+    <string name="transaction_date_confirm">Выбрать</string>
     <string name="transaction_note">Заметка</string>
     <string name="transaction_save">Сохранить</string>
     <string name="transaction_cancel">Отмена</string>

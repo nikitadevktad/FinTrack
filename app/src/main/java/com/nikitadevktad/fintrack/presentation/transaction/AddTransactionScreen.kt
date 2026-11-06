@@ -9,13 +9,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,6 +34,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.nikitadevktad.fintrack.FinTrackApplication
 import com.nikitadevktad.fintrack.R
 import com.nikitadevktad.fintrack.domain.model.TransactionType
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun AddTransactionScreen(
@@ -66,6 +77,7 @@ private fun AddTransactionContent(
     isEditing: Boolean,
     modifier: Modifier
 ) {
+    val isDatePickerOpen = remember { mutableStateOf(false) }
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -86,6 +98,10 @@ private fun AddTransactionContent(
             modifier = Modifier.fillMaxWidth()
         )
         CategoryField(state, viewModel)
+        TransactionDateField(
+            date = state.date,
+            onOpenDatePicker = { isDatePickerOpen.value = true }
+        )
         OutlinedTextField(
             value = state.note,
             onValueChange = viewModel::updateNote,
@@ -121,8 +137,60 @@ private fun AddTransactionContent(
         if (state.isDeleteConfirmationOpen) {
             DeleteConfirmationDialog(viewModel)
         }
+        if (isDatePickerOpen.value) {
+            TransactionDatePickerDialog(
+                date = state.date,
+                onDateSelected = viewModel::updateDate,
+                onDismiss = { isDatePickerOpen.value = false }
+            )
+        }
     }
 }
+
+@Composable
+private fun TransactionDateField(date: LocalDate, onOpenDatePicker: () -> Unit) {
+    Text(stringResource(R.string.transaction_date))
+    Button(onClick = onOpenDatePicker, modifier = Modifier.fillMaxWidth()) {
+        Text(date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale("ru"))))
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TransactionDatePickerDialog(
+    date: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = date.toUtcMillis())
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { selectedDateMillis ->
+                        onDateSelected(selectedDateMillis.toUtcLocalDate())
+                    }
+                    onDismiss()
+                }
+            ) {
+                Text(stringResource(R.string.transaction_date_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.transaction_cancel))
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+private fun Long.toUtcLocalDate(): LocalDate =
+    Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
 @Composable
 private fun DeleteConfirmationDialog(viewModel: AddTransactionViewModel) {
