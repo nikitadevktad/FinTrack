@@ -6,8 +6,12 @@ import kotlinx.coroutines.flow.Flow
 interface TransactionRepository {
     fun observeAll(): Flow<List<Transaction>>
 
+    suspend fun getById(id: Long): Transaction?
+
     /**
      * Идентификатор новой операции назначает вызывающий код.
      */
     suspend fun add(transaction: Transaction)
+
+    suspend fun update(transaction: Transaction): Boolean
 }

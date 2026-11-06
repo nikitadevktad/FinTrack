@@ -15,11 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
+import androidx.navigation.navArgument
 import com.nikitadevktad.fintrack.R
 import com.nikitadevktad.fintrack.presentation.analytics.AnalyticsScreen
 import com.nikitadevktad.fintrack.presentation.history.HistoryScreen
@@ -71,11 +73,24 @@ fun FinTrackApp() {
         ) {
             composable(Destination.Overview.route) { OverviewScreen() }
             composable(Destination.History.route) {
-                HistoryScreen(onAddTransaction = { navController.navigate(Destination.AddTransaction.route) })
+                HistoryScreen(
+                    onAddTransaction = { navController.navigate(Destination.AddTransaction.route) },
+                    onEditTransaction = { id -> navController.navigate(Destination.EditTransaction.route(id)) }
+                )
             }
             composable(Destination.Analytics.route) { AnalyticsScreen() }
             composable(Destination.AddTransaction.route) {
                 AddTransactionScreen(
+                    onSaved = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
+                )
+            }
+            composable(
+                route = Destination.EditTransaction.routePattern,
+                arguments = listOf(navArgument(Destination.EditTransaction.argumentName) { type = NavType.LongType })
+            ) { backStackEntry ->
+                AddTransactionScreen(
+                    transactionId = requireNotNull(backStackEntry.arguments?.getLong(Destination.EditTransaction.argumentName)),
                     onSaved = { navController.popBackStack() },
                     onCancel = { navController.popBackStack() }
                 )
@@ -92,7 +107,16 @@ private enum class Destination(
     Overview("overview", R.string.navigation_overview, R.drawable.ic_overview),
     History("history", R.string.navigation_history, R.drawable.ic_history),
     Analytics("analytics", R.string.navigation_analytics, R.drawable.ic_analytics),
-    AddTransaction("add_transaction", R.string.add_transaction_title, R.drawable.ic_history)
+    AddTransaction("add_transaction", R.string.add_transaction_title, R.drawable.ic_history),
+    EditTransaction("edit_transaction", R.string.edit_transaction_title, R.drawable.ic_history);
+
+    val argumentName: String
+        get() = "transactionId"
+
+    val routePattern: String
+        get() = "$route/{$argumentName}"
+
+    fun route(transactionId: Long): String = "$route/$transactionId"
 }
 
 private val bottomDestinations = listOf(Destination.Overview, Destination.History, Destination.Analytics)

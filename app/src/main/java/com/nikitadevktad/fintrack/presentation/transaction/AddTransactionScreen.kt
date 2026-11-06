@@ -30,23 +30,46 @@ import com.nikitadevktad.fintrack.R
 import com.nikitadevktad.fintrack.domain.model.TransactionType
 
 @Composable
-fun AddTransactionScreen(onSaved: () -> Unit, onCancel: () -> Unit, modifier: Modifier = Modifier) {
+fun AddTransactionScreen(
+    onSaved: () -> Unit,
+    onCancel: () -> Unit,
+    transactionId: Long? = null,
+    modifier: Modifier = Modifier
+) {
     val container = (LocalContext.current.applicationContext as FinTrackApplication).appContainer
     val viewModel: AddTransactionViewModel = viewModel(factory = viewModelFactory {
-        initializer { AddTransactionViewModel(container.transactionRepository, container.categoryRepository) }
+        initializer {
+            AddTransactionViewModel(
+                transactionRepository = container.transactionRepository,
+                categoryRepository = container.categoryRepository,
+                transactionId = transactionId
+            )
+        }
     })
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.isSaved) { if (state.isSaved) onSaved() }
-    AddTransactionContent(state, viewModel, onCancel, modifier)
+    if (state.loadError) {
+        LoadErrorContent(onCancel, modifier)
+    } else if (state.isLoading) {
+        LoadingContent(modifier)
+    } else {
+        AddTransactionContent(state, viewModel, onCancel, transactionId != null, modifier)
+    }
 }
 
 @Composable
-private fun AddTransactionContent(state: AddTransactionState, viewModel: AddTransactionViewModel, onCancel: () -> Unit, modifier: Modifier) {
+private fun AddTransactionContent(
+    state: AddTransactionState,
+    viewModel: AddTransactionViewModel,
+    onCancel: () -> Unit,
+    isEditing: Boolean,
+    modifier: Modifier
+) {
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(stringResource(R.string.add_transaction_title))
+        Text(stringResource(if (isEditing) R.string.edit_transaction_title else R.string.add_transaction_title))
         Text(stringResource(R.string.transaction_type))
         Row {
             TypeOption(state.type, TransactionType.INCOME, R.string.transaction_income, viewModel::selectType)
@@ -68,12 +91,37 @@ private fun AddTransactionContent(state: AddTransactionState, viewModel: AddTran
             label = { Text(stringResource(R.string.transaction_note)) },
             modifier = Modifier.fillMaxWidth()
         )
-        if (state.saveError) Text(stringResource(R.string.transaction_save_error))
+        state.saveError?.let { Text(stringResource(it.stringRes)) }
         Button(onClick = viewModel::save, enabled = !state.isSaving, modifier = Modifier.fillMaxWidth()) {
             if (state.isSaving) CircularProgressIndicator() else Text(stringResource(R.string.transaction_save))
         }
         TextButton(onClick = onCancel, enabled = !state.isSaving, modifier = Modifier.align(Alignment.End)) {
             Text(stringResource(R.string.transaction_cancel))
+        }
+    }
+}
+
+@Composable
+private fun LoadingContent(modifier: Modifier) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun LoadErrorContent(onCancel: () -> Unit, modifier: Modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(stringResource(R.string.transaction_load_error))
+        TextButton(onClick = onCancel) {
+            Text(stringResource(R.string.transaction_back_to_history))
         }
     }
 }
@@ -118,4 +166,10 @@ private val AmountError.stringRes: Int
         AmountError.INVALID -> R.string.transaction_amount_invalid
         AmountError.NOT_POSITIVE -> R.string.transaction_amount_positive
         AmountError.OVERFLOW -> R.string.transaction_amount_overflow
+    }
+
+private val SaveError.stringRes: Int
+    get() = when (this) {
+        SaveError.FAILED -> R.string.transaction_save_error
+        SaveError.NOT_FOUND -> R.string.transaction_update_not_found
     }

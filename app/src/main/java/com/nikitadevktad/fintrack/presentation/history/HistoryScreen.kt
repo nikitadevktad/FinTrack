@@ -1,5 +1,6 @@
 package com.nikitadevktad.fintrack.presentation.history
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,7 +30,11 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun HistoryScreen(onAddTransaction: () -> Unit, modifier: Modifier = Modifier) {
+fun HistoryScreen(
+    onAddTransaction: () -> Unit,
+    onEditTransaction: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val appContainer = (LocalContext.current.applicationContext as FinTrackApplication).appContainer
     val viewModel: HistoryViewModel = viewModel(factory = viewModelFactory {
         initializer { HistoryViewModel(appContainer.transactionRepository, appContainer.categoryRepository) }
@@ -57,7 +62,7 @@ fun HistoryScreen(onAddTransaction: () -> Unit, modifier: Modifier = Modifier) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(items, key = HistoryItem::id) { item ->
-                    Column {
+                    Column(modifier = Modifier.clickable { onEditTransaction(item.id) }) {
                         Text(item.categoryName, style = MaterialTheme.typography.titleMedium)
                         Text(item.date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale("ru"))))
                         Text(

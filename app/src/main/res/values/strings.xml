@@ -7,6 +7,7 @@
     <string name="history_empty_state">Операций пока нет</string>
     <string name="history_add_transaction">Добавить операцию</string>
     <string name="add_transaction_title">Новая операция</string>
+    <string name="edit_transaction_title">Редактирование операции</string>
     <string name="transaction_type">Тип операции</string>
     <string name="transaction_income">Доход</string>
     <string name="transaction_expense">Расход</string>
@@ -23,6 +24,9 @@
     <string name="transaction_amount_overflow">Сумма слишком большая</string>
     <string name="transaction_category_required">Выберите категорию</string>
     <string name="transaction_save_error">Не удалось сохранить операцию. Попробуйте ещё раз</string>
+    <string name="transaction_update_not_found">Операция больше не существует</string>
+    <string name="transaction_load_error">Не удалось открыть операцию. Возможно, она была удалена</string>
+    <string name="transaction_back_to_history">Вернуться в историю</string>
     <string name="transaction_income_amount">+%1$s ₽</string>
     <string name="transaction_expense_amount">-%1$s ₽</string>
     <string name="analytics_empty_state">Аналитика появится после добавления операций</string>

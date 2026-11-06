@@ -8,6 +8,7 @@
 - [Шаг 05. Локальная база Room](docs/steps/05-room-database.md)
 - [Шаг 06. Подключение Room и репозитории](docs/steps/06-room-repositories.md)
 - [Шаг 07. Добавление операции и история](docs/steps/07-add-transaction.md)
+- [Шаг 08. Редактирование операции](docs/steps/08-edit-transaction.md)
 
 ## Сборка
 

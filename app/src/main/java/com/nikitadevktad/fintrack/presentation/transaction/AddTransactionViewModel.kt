@@ -22,7 +22,9 @@ data class AddTransactionState(
     val amountError: AmountError? = null,
     val categoryError: Boolean = false,
     val isCategoryDialogOpen: Boolean = false,
-    val saveError: Boolean = false,
+    val saveError: SaveError? = null,
+    val isLoading: Boolean = false,
+    val loadError: Boolean = false,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false
 ) {
@@ -32,16 +34,57 @@ data class AddTransactionState(
 
 enum class AmountError { EMPTY, INVALID, NOT_POSITIVE, OVERFLOW }
 
+enum class SaveError { FAILED, NOT_FOUND }
+
 class AddTransactionViewModel(
     private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val transactionId: Long? = null
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AddTransactionState())
+    private val _state = MutableStateFlow(AddTransactionState(isLoading = transactionId != null))
     val state: StateFlow<AddTransactionState> = _state.asStateFlow()
+    private var originalTransaction: Transaction? = null
+    private var isPrefilled = false
 
     init {
         viewModelScope.launch {
-            _state.value = _state.value.copy(categories = categoryRepository.getAll())
+            runCatching {
+                val categories = categoryRepository.getAll()
+                val transaction: Transaction? = if (transactionId == null) {
+                    null
+                } else {
+                    transactionRepository.getById(transactionId)
+                }
+                categories to transaction
+            }.onSuccess { (categories, transaction) ->
+                if (transactionId != null && transaction == null) {
+                    _state.value = _state.value.copy(isLoading = false, loadError = true)
+                    return@onSuccess
+                }
+                if (transaction != null) {
+                    val category = categories.firstOrNull { it.id == transaction.categoryId }
+                    if (category == null) {
+                        _state.value = _state.value.copy(isLoading = false, loadError = true)
+                        return@onSuccess
+                    }
+                    originalTransaction = transaction
+                    if (!isPrefilled) {
+                        isPrefilled = true
+                        _state.value = _state.value.copy(
+                            type = category.type,
+                            amount = formatAmountInput(transaction.amountInKopecks),
+                            categoryId = transaction.categoryId,
+                            note = transaction.note.orEmpty(),
+                            categories = categories,
+                            isLoading = false
+                        )
+                    }
+                } else {
+                    _state.value = _state.value.copy(categories = categories, isLoading = false)
+                }
+            }.onFailure {
+                _state.value = _state.value.copy(isLoading = false, loadError = transactionId != null)
+            }
         }
     }
 
@@ -52,12 +95,12 @@ class AddTransactionViewModel(
             type = type,
             categoryId = current.categoryId.takeIf { selectedCategory?.type == type },
             categoryError = false,
-            saveError = false
+            saveError = null
         )
     }
 
     fun updateAmount(amount: String) {
-        _state.value = _state.value.copy(amount = amount, amountError = null, saveError = false)
+        _state.value = _state.value.copy(amount = amount, amountError = null, saveError = null)
     }
 
     fun selectCategory(categoryId: Long) {
@@ -65,7 +108,7 @@ class AddTransactionViewModel(
             categoryId = categoryId,
             categoryError = false,
             isCategoryDialogOpen = false,
-            saveError = false
+            saveError = null
         )
     }
 
@@ -78,7 +121,7 @@ class AddTransactionViewModel(
     }
 
     fun updateNote(note: String) {
-        _state.value = _state.value.copy(note = note, saveError = false)
+        _state.value = _state.value.copy(note = note, saveError = null)
     }
 
     fun save() {
@@ -93,22 +136,39 @@ class AddTransactionViewModel(
             )
             return
         }
-        _state.value = current.copy(isSaving = true, saveError = false)
+        _state.value = current.copy(isSaving = true, saveError = null)
         viewModelScope.launch {
-            runCatching {
-                transactionRepository.add(
-                    Transaction(
-                        id = System.currentTimeMillis(),
-                        amountInKopecks = amountResult.value,
-                        categoryId = current.categoryId!!,
-                        date = LocalDate.now(),
-                        note = current.note.trim().ifEmpty { null }
-                    )
-                )
-            }.onSuccess {
-                _state.value = _state.value.copy(isSaving = false, isSaved = true)
-            }.onFailure {
-                _state.value = _state.value.copy(isSaving = false, saveError = true)
+            val transaction = originalTransaction?.copy(
+                amountInKopecks = amountResult.value,
+                categoryId = current.categoryId!!,
+                note = current.note.trim().ifEmpty { null }
+            ) ?: Transaction(
+                id = System.currentTimeMillis(),
+                amountInKopecks = amountResult.value,
+                categoryId = current.categoryId!!,
+                date = LocalDate.now(),
+                note = current.note.trim().ifEmpty { null }
+            )
+            if (originalTransaction != null) {
+                runCatching { transactionRepository.update(transaction) }
+                    .onSuccess { updated ->
+                        _state.value = _state.value.copy(
+                            isSaving = false,
+                            isSaved = updated,
+                            saveError = if (updated) null else SaveError.NOT_FOUND
+                        )
+                    }
+                    .onFailure {
+                        _state.value = _state.value.copy(isSaving = false, saveError = SaveError.FAILED)
+                    }
+            } else {
+                runCatching { transactionRepository.add(transaction) }
+                    .onSuccess {
+                        _state.value = _state.value.copy(isSaving = false, isSaved = true)
+                    }
+                    .onFailure {
+                        _state.value = _state.value.copy(isSaving = false, saveError = SaveError.FAILED)
+                    }
             }
         }
     }
@@ -144,3 +204,5 @@ private fun Long.checkedPlus(other: Long): Long? = try {
 } catch (_: ArithmeticException) {
     null
 }
+
+private fun formatAmountInput(kopecks: Long): String = "%d,%02d".format(kopecks / 100, kopecks % 100)

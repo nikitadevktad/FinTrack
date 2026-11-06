@@ -15,10 +15,21 @@ class RoomTransactionRepository(
     override fun observeAll(): Flow<List<Transaction>> = transactionDao.observeAll()
         .map { transactions -> transactions.map(TransactionEntity::toDomain) }
 
+    override suspend fun getById(id: Long): Transaction? {
+        awaitInitialization()
+        return transactionDao.getById(id)?.toDomain()
+    }
+
     override suspend fun add(transaction: Transaction) {
         require(transaction.amountInKopecks > 0)
         awaitInitialization()
         transactionDao.insert(transaction.toEntity())
+    }
+
+    override suspend fun update(transaction: Transaction): Boolean {
+        require(transaction.amountInKopecks > 0)
+        awaitInitialization()
+        return transactionDao.update(transaction.toEntity()) == 1
     }
 }
 
