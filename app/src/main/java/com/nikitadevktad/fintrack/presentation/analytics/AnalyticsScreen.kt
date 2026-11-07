@@ -1,10 +1,18 @@
 package com.nikitadevktad.fintrack.presentation.analytics
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -23,6 +31,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,7 +61,12 @@ fun AnalyticsScreen(modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isPeriodDialogOpen = remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
         Text(stringResource(R.string.analytics_period_label), style = MaterialTheme.typography.titleMedium)
         Text(
             stringResource(
@@ -88,7 +104,9 @@ fun AnalyticsScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun AnalyticsMessage(textRes: Int, isError: Boolean = false) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -130,18 +148,61 @@ private fun CategoryExpenseList(expenses: List<CategoryExpense>) {
     val totalInKopecks = expenses.fold(BigDecimal.ZERO) { total, expense ->
         total + BigDecimal.valueOf(expense.amountInKopecks)
     }
+    val maxAmountInKopecks = expenses.maxOfOrNull(CategoryExpense::amountInKopecks) ?: 0L
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         expenses.forEach { expense ->
-            Column {
-                Text(expense.categoryName, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(
-                        R.string.analytics_category_expense_value,
-                        formatRubles(expense.amountInKopecks),
-                        formatPercentage(expense.amountInKopecks, totalInKopecks)
-                    )
-                )
-            }
+            CategoryExpenseChartRow(expense, totalInKopecks, maxAmountInKopecks)
+        }
+    }
+}
+
+@Composable
+private fun CategoryExpenseChartRow(
+    expense: CategoryExpense,
+    totalInKopecks: BigDecimal,
+    maxAmountInKopecks: Long
+) {
+    val amount = formatRubles(expense.amountInKopecks)
+    val percentage = formatPercentage(expense.amountInKopecks, totalInKopecks)
+    val description = stringResource(
+        R.string.analytics_category_expense_accessibility,
+        expense.categoryName,
+        amount,
+        percentage
+    )
+    val barFraction = if (maxAmountInKopecks > 0L) {
+        (expense.amountInKopecks.toDouble() / maxAmountInKopecks.toDouble())
+            .toFloat()
+            .coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics { contentDescription = description },
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(expense.categoryName, style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(R.string.analytics_category_expense_value, amount, percentage),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(12.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clearAndSetSemantics {}
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(barFraction)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.primary)
+            )
         }
     }
 }

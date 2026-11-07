@@ -15,6 +15,7 @@
 - [Шаг 12. Фильтры типа и категории в истории](docs/steps/12-history-type-category-filter.md)
 - [Шаг 13. Сводка за период](docs/steps/13-period-summary.md)
 - [Шаг 14. Расходы по категориям](docs/steps/14-category-expenses.md)
+- [Шаг 15. Горизонтальная диаграмма расходов](docs/steps/15-category-chart.md)
 
 ## Сборка
 

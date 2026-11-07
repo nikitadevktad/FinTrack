@@ -2,12 +2,12 @@ package com.nikitadevktad.fintrack.presentation.history
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -63,55 +63,53 @@ fun HistoryScreen(
     val filters by viewModel.filters.collectAsStateWithLifecycle()
     val categories by viewModel.availableCategories.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Button(
-            onClick = onAddTransaction,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(stringResource(R.string.history_add_transaction))
-        }
-        HistoryFiltersSelector(filters = filters, categories = categories, viewModel = viewModel)
-        if (items.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Button(
+                onClick = onAddTransaction,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             ) {
+                Text(stringResource(R.string.history_add_transaction))
+            }
+        }
+        item {
+            HistoryFiltersSelector(filters = filters, categories = categories, viewModel = viewModel)
+        }
+        if (items.isEmpty()) {
+            item {
                 Text(
                     stringResource(
                         if (filters == HistoryFilters()) R.string.history_empty_state
                         else R.string.history_filtered_empty_state
                     ),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
         } else {
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(items, key = HistoryItem::id) { item ->
-                    Column(modifier = Modifier.clickable { onEditTransaction(item.id) }) {
-                        Text(item.categoryName, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            item.date.format(
-                                DateTimeFormatter.ofPattern(
-                                    "dd.MM.yyyy",
-                                    Locale("ru")
-                                )
-                            )
-                        )
-                        Text(
-                            stringResource(
-                                if (item.type == TransactionType.INCOME) R.string.transaction_income_amount
-                                else R.string.transaction_expense_amount,
-                                formatRubles(item.amountInKopecks)
-                            ),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
+            items(items, key = HistoryItem::id) { item ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onEditTransaction(item.id) }
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(item.categoryName, style = MaterialTheme.typography.titleMedium)
+                    Text(item.date.format(historyDateFormatter))
+                    Text(
+                        stringResource(
+                            if (item.type == TransactionType.INCOME) R.string.transaction_income_amount
+                            else R.string.transaction_expense_amount,
+                            formatRubles(item.amountInKopecks)
+                        ),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                 }
             }
         }
