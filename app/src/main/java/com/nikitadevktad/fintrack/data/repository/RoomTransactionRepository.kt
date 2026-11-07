@@ -3,6 +3,7 @@ package com.nikitadevktad.fintrack.data.repository
 import com.nikitadevktad.fintrack.data.local.dao.TransactionDao
 import com.nikitadevktad.fintrack.data.local.entity.TransactionEntity
 import com.nikitadevktad.fintrack.domain.model.Transaction
+import com.nikitadevktad.fintrack.domain.model.PeriodSummary
 import com.nikitadevktad.fintrack.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -12,6 +13,15 @@ class RoomTransactionRepository(
     private val transactionDao: TransactionDao,
     private val awaitInitialization: suspend () -> Unit
 ) : TransactionRepository {
+    override fun observePeriodSummary(startEpochDay: Long, endEpochDay: Long): Flow<PeriodSummary> =
+        transactionDao.observePeriodSummary(startEpochDay, endEpochDay).map { summary ->
+            PeriodSummary(
+                incomeInKopecks = summary.incomeInKopecks,
+                expenseInKopecks = summary.expenseInKopecks,
+                operationCount = summary.operationCount
+            )
+        }
+
     override fun observeFiltered(
         startEpochDay: Long?,
         endEpochDay: Long?,

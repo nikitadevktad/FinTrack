@@ -58,4 +58,16 @@
     <string name="transaction_income_amount">+%1$s ₽</string>
     <string name="transaction_expense_amount">-%1$s ₽</string>
     <string name="analytics_empty_state">Аналитика появится после добавления операций</string>
+    <string name="analytics_period_label">Период</string>
+    <string name="analytics_period_dates">С %1$s по %2$s</string>
+    <string name="analytics_choose_period">Выбрать период</string>
+    <string name="analytics_current_month">Текущий месяц</string>
+    <string name="analytics_period_invalid_range">Начальная дата не может быть позже конечной</string>
+    <string name="analytics_loading">Загрузка сводки</string>
+    <string name="analytics_empty_period">За выбранный период операций нет</string>
+    <string name="analytics_error">Не удалось загрузить сводку. Попробуйте ещё раз</string>
+    <string name="analytics_income">Доходы</string>
+    <string name="analytics_expense">Расходы</string>
+    <string name="analytics_difference">Разница за период</string>
+    <string name="analytics_amount">%1$s ₽</string>
 </resources>

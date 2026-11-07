@@ -2,25 +2,182 @@ package com.nikitadevktad.fintrack.presentation.analytics
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.nikitadevktad.fintrack.FinTrackApplication
 import com.nikitadevktad.fintrack.R
+import com.nikitadevktad.fintrack.domain.model.PeriodSummary
+import java.math.BigInteger
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun AnalyticsScreen(modifier: Modifier = Modifier) {
+    val appContainer = (LocalContext.current.applicationContext as FinTrackApplication).appContainer
+    val viewModel: AnalyticsViewModel = viewModel(factory = viewModelFactory {
+        initializer { AnalyticsViewModel(appContainer.transactionRepository) }
+    })
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPeriodDialogOpen = remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
+        Text(stringResource(R.string.analytics_period_label), style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(
+                R.string.analytics_period_dates,
+                state.period.start.format(analyticsDateFormatter),
+                state.period.end.format(analyticsDateFormatter)
+            )
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { isPeriodDialogOpen.value = true }) {
+                Text(stringResource(R.string.analytics_choose_period))
+            }
+            TextButton(onClick = viewModel::selectCurrentMonth) {
+                Text(stringResource(R.string.analytics_current_month))
+            }
+        }
+        when (val current = state) {
+            is AnalyticsUiState.Loading -> AnalyticsMessage(R.string.analytics_loading)
+            is AnalyticsUiState.Empty -> AnalyticsMessage(R.string.analytics_empty_period)
+            is AnalyticsUiState.Error -> AnalyticsMessage(R.string.analytics_error, isError = true)
+            is AnalyticsUiState.Content -> Summary(current.summary)
+        }
+    }
+    if (isPeriodDialogOpen.value) {
+        AnalyticsPeriodDialog(
+            initialPeriod = state.period,
+            onConfirm = viewModel::selectCustomPeriod,
+            onDismiss = { isPeriodDialogOpen.value = false }
+        )
+    }
+}
+
+@Composable
+private fun AnalyticsMessage(textRes: Int, isError: Boolean = false) {
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(R.string.analytics_empty_state),
-            style = MaterialTheme.typography.bodyLarge
+            text = stringResource(textRes),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
         )
     }
+}
+
+@Composable
+private fun Summary(summary: PeriodSummary) {
+    Column(modifier = Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SummaryValue(R.string.analytics_income, formatRubles(summary.incomeInKopecks))
+        SummaryValue(R.string.analytics_expense, formatRubles(summary.expenseInKopecks))
+        SummaryValue(R.string.analytics_difference, formatRubles(summary.differenceInKopecks))
+    }
+}
+
+@Composable
+private fun SummaryValue(labelRes: Int, value: String) {
+    Column {
+        Text(stringResource(labelRes), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.analytics_amount, value), style = MaterialTheme.typography.headlineSmall)
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun AnalyticsPeriodDialog(
+    initialPeriod: AnalyticsPeriod,
+    onConfirm: (LocalDate, LocalDate) -> Boolean,
+    onDismiss: () -> Unit
+) {
+    val start = remember { mutableStateOf(initialPeriod.start) }
+    val end = remember { mutableStateOf(initialPeriod.end) }
+    val editingStart = remember { mutableStateOf<Boolean?>(null) }
+    val validationError = remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.analytics_choose_period)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.history_period_start))
+                TextButton(onClick = { editingStart.value = true }) { Text(start.value.format(analyticsDateFormatter)) }
+                Text(stringResource(R.string.history_period_end))
+                TextButton(onClick = { editingStart.value = false }) { Text(end.value.format(analyticsDateFormatter)) }
+                if (validationError.value) {
+                    Text(stringResource(R.string.analytics_period_invalid_range), color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                validationError.value = !onConfirm(start.value, end.value)
+                if (!validationError.value) onDismiss()
+            }) { Text(stringResource(R.string.history_period_confirm)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.transaction_cancel)) } }
+    )
+    editingStart.value?.let { isStart ->
+        val selectedDate = if (isStart) start.value else end.value
+        key(isStart, selectedDate) {
+            val pickerState = rememberDatePickerState(selectedDate.toUtcMillis())
+            DatePickerDialog(
+                onDismissRequest = { editingStart.value = null },
+                confirmButton = {
+                    TextButton(onClick = {
+                        pickerState.selectedDateMillis?.toUtcLocalDate()?.let { date ->
+                            if (isStart) start.value = date else end.value = date
+                            validationError.value = false
+                        }
+                        editingStart.value = null
+                    }) { Text(stringResource(R.string.transaction_date_confirm)) }
+                },
+                dismissButton = { TextButton(onClick = { editingStart.value = null }) { Text(stringResource(R.string.transaction_cancel)) } }
+            ) { DatePicker(state = pickerState) }
+        }
+    }
+}
+
+private val analyticsDateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale("ru"))
+
+private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+private fun Long.toUtcLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
+
+private fun formatRubles(kopecks: Long): String {
+    val sign = if (kopecks < 0) "-" else ""
+    val absolute = BigInteger.valueOf(kopecks).abs()
+    val hundred = BigInteger.valueOf(100)
+    val rubles = absolute / hundred
+    val remainder = (absolute % hundred).toLong()
+    return if (remainder == 0L) "$sign$rubles"
+    else "%s%s,%02d".format(Locale("ru"), sign, rubles, remainder)
 }
