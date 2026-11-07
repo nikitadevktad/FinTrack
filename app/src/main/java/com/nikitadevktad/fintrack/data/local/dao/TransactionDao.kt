@@ -45,6 +45,23 @@ interface TransactionDao {
     )
     fun observePeriodSummary(startEpochDay: Long, endEpochDay: Long): Flow<PeriodSummaryRow>
 
+    @Query(
+        """
+        SELECT
+            categories.id AS categoryId,
+            categories.name AS categoryName,
+            SUM(transactions.amountInKopecks) AS amountInKopecks
+        FROM transactions
+        INNER JOIN categories ON transactions.categoryId = categories.id
+        WHERE categories.type = 'EXPENSE'
+          AND transactions.dateEpochDay >= :startEpochDay
+          AND transactions.dateEpochDay < :endEpochDay
+        GROUP BY categories.id, categories.name
+        ORDER BY amountInKopecks DESC, categoryName ASC, categoryId ASC
+        """
+    )
+    fun observeCategoryExpenses(startEpochDay: Long, endEpochDay: Long): Flow<List<CategoryExpenseRow>>
+
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun getById(id: Long): TransactionEntity?
 

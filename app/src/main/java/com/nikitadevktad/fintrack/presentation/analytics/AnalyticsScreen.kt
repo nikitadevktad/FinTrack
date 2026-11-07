@@ -30,8 +30,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.nikitadevktad.fintrack.FinTrackApplication
 import com.nikitadevktad.fintrack.R
+import com.nikitadevktad.fintrack.domain.model.CategoryExpense
 import com.nikitadevktad.fintrack.domain.model.PeriodSummary
+import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -66,9 +69,11 @@ fun AnalyticsScreen(modifier: Modifier = Modifier) {
         }
         when (val current = state) {
             is AnalyticsUiState.Loading -> AnalyticsMessage(R.string.analytics_loading)
-            is AnalyticsUiState.Empty -> AnalyticsMessage(R.string.analytics_empty_period)
             is AnalyticsUiState.Error -> AnalyticsMessage(R.string.analytics_error, isError = true)
-            is AnalyticsUiState.Content -> Summary(current.summary)
+            is AnalyticsUiState.Content -> {
+                Summary(current.summary)
+                CategoryExpenses(current.categoryExpenses)
+            }
         }
     }
     if (isPeriodDialogOpen.value) {
@@ -101,6 +106,43 @@ private fun Summary(summary: PeriodSummary) {
         SummaryValue(R.string.analytics_income, formatRubles(summary.incomeInKopecks))
         SummaryValue(R.string.analytics_expense, formatRubles(summary.expenseInKopecks))
         SummaryValue(R.string.analytics_difference, formatRubles(summary.differenceInKopecks))
+    }
+}
+
+@Composable
+private fun CategoryExpenses(state: CategoryExpensesUiState) {
+    Column(modifier = Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(stringResource(R.string.analytics_category_expenses), style = MaterialTheme.typography.titleLarge)
+        when (state) {
+            CategoryExpensesUiState.Loading -> Text(stringResource(R.string.analytics_category_expenses_loading))
+            CategoryExpensesUiState.Empty -> Text(stringResource(R.string.analytics_category_expenses_empty))
+            CategoryExpensesUiState.Error -> Text(
+                stringResource(R.string.analytics_category_expenses_error),
+                color = MaterialTheme.colorScheme.error
+            )
+            is CategoryExpensesUiState.Content -> CategoryExpenseList(state.expenses)
+        }
+    }
+}
+
+@Composable
+private fun CategoryExpenseList(expenses: List<CategoryExpense>) {
+    val totalInKopecks = expenses.fold(BigDecimal.ZERO) { total, expense ->
+        total + BigDecimal.valueOf(expense.amountInKopecks)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        expenses.forEach { expense ->
+            Column {
+                Text(expense.categoryName, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(
+                        R.string.analytics_category_expense_value,
+                        formatRubles(expense.amountInKopecks),
+                        formatPercentage(expense.amountInKopecks, totalInKopecks)
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -180,4 +222,13 @@ private fun formatRubles(kopecks: Long): String {
     val remainder = (absolute % hundred).toLong()
     return if (remainder == 0L) "$sign$rubles"
     else "%s%s,%02d".format(Locale("ru"), sign, rubles, remainder)
+}
+
+private fun formatPercentage(amountInKopecks: Long, totalInKopecks: BigDecimal): String {
+    if (totalInKopecks.signum() == 0) return "0,00"
+    return BigDecimal.valueOf(amountInKopecks)
+        .multiply(BigDecimal.valueOf(100))
+        .divide(totalInKopecks, 2, RoundingMode.HALF_UP)
+        .toPlainString()
+        .replace('.', ',')
 }
