@@ -4,13 +4,6 @@
 
 Приложение использует MVVM и разделяется на слои `data`, `domain` и `presentation`. На первом этапе весь код находится в модуле `app`. Пакеты создаются по мере появления кода. Пустые классы и файлы-заглушки не добавляются.
 
-```mermaid
-flowchart TD
-    P[presentation<br/>Compose, ViewModel, UI state] --> D[domain<br/>models, repository interfaces, use cases]
-    DA[data<br/>repository implementations, Room] --> D
-    DA --> R[(Room)]
-```
-
 ## Presentation
 
 Слой содержит Compose-экраны, ViewModel и состояние интерфейса. ViewModel получает данные через use cases и предоставляет состояние экрана через `StateFlow`.
